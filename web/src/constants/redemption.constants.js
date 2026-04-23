@@ -17,11 +17,31 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-export * from './channel.constants';
-export * from './user.constants';
-export * from './toast.constants';
-export * from './common.constant';
-export * from './dashboard.constants';
-export * from './playground.constants';
-export * from './redemption.constants';
-export * from './channel-affinity-template.constants';
+export const REDEMPTION_STATUS = {
+  UNUSED: 1, // Unused
+  DISABLED: 2, // Disabled
+  USED: 3, // Used
+};
+
+// Redemption code status display mapping
+export const REDEMPTION_STATUS_MAP = {
+  [REDEMPTION_STATUS.UNUSED]: {
+    color: 'green',
+    text: '未使用',
+  },
+  [REDEMPTION_STATUS.DISABLED]: {
+    color: 'red',
+    text: '已禁用',
+  },
+  [REDEMPTION_STATUS.USED]: {
+    color: 'grey',
+    text: '已使用',
+  },
+};
+
+// Action type constants
+export const REDEMPTION_ACTIONS = {
+  DELETE: 'delete',
+  ENABLE: 'enable',
+  DISABLE: 'disable',
+};
