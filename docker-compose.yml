@@ -1,0 +1,99 @@
+# ============================================================
+# 星链 API - New API 整合部署配置
+# 
+# 快速启动：docker-compose up -d
+# 访问地址：http://localhost
+#   - 定制首页 → http://localhost (Nginx)
+#   - 后台管理 → http://localhost/admin
+#   - API 接口 → http://localhost/v1
+# ============================================================
+
+version: '3.4'
+
+services:
+  # ===== Nginx 反向代理 + 定制首页 =====
+  nginx:
+    image: nginx:alpine
+    container_name: starlink-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/html:/usr/share/nginx/html
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - new-api
+    networks:
+      - starlink-network
+
+  # ===== New API 核心服务 =====
+  new-api:
+    image: calciumion/new-api:latest
+    container_name: starlink-api
+    restart: always
+    command: --log-dir /app/logs
+    expose:
+      - "3000"
+    volumes:
+      - ./data:/data
+      - ./logs/api:/app/logs
+    environment:
+      - SQL_DSN=postgresql://root:StarLink2025!@postgres:5432/newapi
+      - REDIS_CONN_STRING=redis://:StarLink2025!@redis:6379
+      - SESSION_SECRET=starlink_api_secret_key_2025_change_me
+      - TZ=Asia/Shanghai
+      - NODE_NAME=starlink-main
+      - SYSTEM_NAME=星链 API
+      - FOOTER_HTML=© 2025 星链 API. All rights reserved. | 联系邮箱：<a href="mailto:rao5201@126.com">rao5201@126.com</a>
+      - THEME=default
+      - REGISTER_ENABLED=true
+      - INITIAL_ROOT_TOKEN=starlink_init_token_change_me
+      - ERROR_LOG_ENABLED=true
+      - BATCH_UPDATE_ENABLED=true
+      - QUOTA_FOR_NEW_USER=500000
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - starlink-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3000/api/status | grep -o '\"success\":\\s*true' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===== Redis 缓存 =====
+  redis:
+    image: redis:7-alpine
+    container_name: starlink-redis
+    restart: always
+    command: ["redis-server", "--requirepass", "StarLink2025!", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - starlink-network
+
+  # ===== PostgreSQL 数据库 =====
+  postgres:
+    image: postgres:15-alpine
+    container_name: starlink-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: StarLink2025!
+      POSTGRES_DB: newapi
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - starlink-network
+
+volumes:
+  pg_data:
+  redis_data:
+
+networks:
+  starlink-network:
+    driver: bridge
