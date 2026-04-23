@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>星链 API - 高速稳定的 AI API 中转站</title>
+  <meta name="description" content="星链API - 一站式AI大模型API中转服务，支持OpenAI、Claude、Gemini、DeepSeek、GLM等主流模型，低延迟7×24稳定直连。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ========== RESET & BASE ========== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg-base: #09090b;
+      --bg-surface: #18181b;
+      --bg-elevated: #1e1e23;
+      --bg-hover: #27272a;
+      --border-subtle: rgba(255,255,255,0.06);
+      --border-medium: rgba(255,255,255,0.12);
+      --text-primary: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --accent-1: #6366f1;
+      --accent-2: #8b5cf6;
+      --accent-3: #06b6d4;
+      --accent-pink: #ec4899;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --gradient-primary: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+      --gradient-warm: linear-gradient(135deg, #f43f5e, #ec4899, #8b5cf6);
+      --gradient-china: linear-gradient(135deg, #dc2626, #ea580c, #d97706);
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --max-width: 1280px;
+      --nav-height: 72px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-base);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; }
+    .container { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
+
+    /* ========== SCROLL PROGRESS BAR ========== */
+    #scroll-progress {
+      position: fixed; top: 0; left: 0; height: 3px; z-index: 9999;
+      background: var(--gradient-primary); width: 0; transition: width 0.1s linear;
+    }
+
+    /* ========== NAVIGATION ========== */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; height: var(--nav-height);
+      z-index: 100; display: flex; align-items: center;
+      background: rgba(9,9,11,0.75); backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background 0.3s ease;
+    }
+    .nav.scrolled { background: rgba(9,9,11,0.95); }
+    .nav .container { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px; font-weight: 700;
+      font-size: 20px; letter-spacing: -0.02em;
+    }
+    .nav-logo .logo-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--gradient-primary); display: flex; align-items: center;
+      justify-content: center; font-size: 18px;
+    }
+    .nav-logo span { background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .nav-links a {
+      padding: 8px 16px; border-radius: var(--radius-sm); font-size: 14px;
+      font-weight: 500; color: var(--text-secondary); transition: all 0.2s ease;
+    }
+    .nav-links a:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .nav-actions { display: flex; align-items: center; gap: 12px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;
+      border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
+      font-family: var(--font-sans); cursor: pointer; border: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-primary {
+      background: var(--gradient-primary); color: #fff;
+      box-shadow: 0 0 20px rgba(99,102,241,0.25);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(99,102,241,0.4); }
+    .btn-ghost {
+      background: transparent; color: var(--text-secondary);
+      border: 1px solid var(--border-medium);
+    }
+    .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .btn-sm { padding: 6px 14px; font-size: 13px; }
+
+    /* Mobile menu */
+    .nav-mobile-toggle { display: none; background: none; border: none; color: var(--text-primary); cursor: pointer; padding: 8px; }
+    @media (max-width: 768px) {
+      .nav-links, .nav-actions .btn-ghost { display: none; }
+      .nav-mobile-toggle { display: block; }
+      .nav-links.open {
+        display: flex; flex-direction: column; position: absolute;
+        top: var(--nav-height); left: 0; right: 0; background: var(--bg-surface);
+        padding: 16px; border-bottom: 1px solid var(--border-subtle);
+        animation: fadeIn 0.2s ease;
+      }
+    }
+
+    /* ========== HERO ========== */
+    .hero {
+      min-height: 100vh; display: flex; align-items: center;
+      padding-top: var(--nav-height); position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(circle at 30% 50%, rgba(99,102,241,0.08) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 50%, rgba(6,182,212,0.06) 0%, transparent 50%),
+                  radial-gradient(circle at 50% 80%, rgba(236,72,153,0.04) 0%, transparent 50%);
+      animation: heroGlow 15s ease-in-out infinite alternate;
+    }
+    @keyframes heroGlow {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(-3%, 3%) rotate(3deg); }
+    }
+    .hero-grid-bg {
+      position: absolute; inset: 0; opacity: 0.03;
+      background-image: linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+    .hero .container { position: relative; z-index: 1; text-align: center; max-width: 900px; margin: 0 auto; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 16px 6px 8px; border-radius: 100px; font-size: 13px;
+      font-weight: 500; margin-bottom: 32px;
+      background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
+      color: #818cf8;
+    }
+    .hero-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-emerald); animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .hero h1 {
+      font-size: clamp(40px, 6vw, 72px); font-weight: 800;
+      line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 24px;
+    }
+    .hero h1 .gradient-text {
+      background: var(--gradient-primary); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero h1 .china-text {
+      background: var(--gradient-china); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 18px; color: var(--text-secondary); max-width: 640px;
+      margin: 0 auto 40px; line-height: 1.7;
+    }
+    .hero-cta { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 64px; }
+    .hero-stats {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+      max-width: 800px; margin: 0 auto;
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat .value {
+      font-size: 36px; font-weight: 800; letter-spacing: -0.02em;
+      background: var(--gradient-primary); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-stat .label { font-size: 13px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+    @media (max-width: 640px) {
+      .hero-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ========== CODE PREVIEW ========== */
+    .code-preview {
+      margin-top: 64px; max-width: 700px; margin-left: auto; margin-right: auto;
+      background: #000; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);
+      overflow: hidden; box-shadow: 0 40px 80px -20px rgba(0,0,0,0.6);
+      position: relative;
+    }
+    .code-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle);
+    }
+    .code-dots { display: flex; gap: 8px; }
+    .code-dots span { width: 12px; height: 12px; border-radius: 50%; }
+    .code-dots span:nth-child(1) { background: #ef4444; }
+    .code-dots span:nth-child(2) { background: #f59e0b; }
+    .code-dots span:nth-child(3) { background: #22c55e; }
+    .code-title { font-size: 13px; color: var(--text-muted); font-family: var(--font-mono); }
+    .code-copy { font-size: 12px; color: var(--text-muted); background: none; border: 1px solid var(--border-subtle); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-family: var(--font-sans); }
+    .code-copy:hover { background: var(--bg-hover); color: var(--text-secondary); }
+    .code-body {
+      padding: 20px; font-family: var(--font-mono); font-size: 13px;
+      line-height: 1.8; overflow-x: auto; color: var(--text-secondary);
+    }
+    .code-body .keyword { color: #c084fc; }
+    .code-body .string { color: #34d399; }
+    .code-body .comment { color: #525252; }
+    .code-body .func { color: #60a5fa; }
+    .code-body .var { color: #f9a8d4; }
+    .code-body .const { color: #fbbf24; }
+
+    /* ========== SECTIONS COMMON ========== */
+    section { padding: 120px 0; position: relative; }
+    .section-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--accent-1); margin-bottom: 16px;
+    }
+    .section-label::before { content: ''; width: 20px; height: 2px; background: var(--accent-1); border-radius: 1px; }
+    .section-title {
+      font-size: clamp(28px, 4vw, 44px); font-weight: 700;
+      line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 16px;
+    }
+    .section-desc { font-size: 17px; color: var(--text-secondary); max-width: 600px; line-height: 1.7; }
+    .section-header { text-align: center; margin-bottom: 64px; }
+    .section-header .section-desc { margin: 0 auto; }
+
+    /* ========== FEATURES ========== */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    }
+    @media (max-width: 1024px) { .features-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px) { .features-grid { grid-template-columns: 1fr; } }
+    .feature-card {
+      background: rgba(24,24,27,0.5); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg); padding: 32px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: var(--gradient-primary); opacity: 0; transition: opacity 0.3s ease;
+    }
+    .feature-card:hover {
+      border-color: var(--border-medium); transform: translateY(-4px);
+      box-shadow: 0 20px 40px -12px rgba(0,0,0,0.5);
+    }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-icon {
+      width: 48px; height: 48px; border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 20px;
+    }
+    .feature-icon.blue { background: rgba(99,102,241,0.15); }
+    .feature-icon.purple { background: rgba(139,92,246,0.15); }
+    .feature-icon.cyan { background: rgba(6,182,212,0.15); }
+    .feature-icon.pink { background: rgba(236,72,153,0.15); }
+    .feature-icon.emerald { background: rgba(16,185,129,0.15); }
+    .feature-icon.amber { background: rgba(245,158,11,0.15); }
+    .feature-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 10px; }
+    .feature-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+
+    /* ========== MODELS ========== */
+    .models-section { background: var(--bg-surface); }
+    .models-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;
+    }
+    .model-card {
+      background: var(--bg-base); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md); padding: 24px; display: flex;
+      align-items: center; gap: 16px; transition: all 0.2s ease;
+    }
+    .model-card:hover { border-color: var(--border-medium); background: var(--bg-elevated); }
+    .model-logo {
+      width: 48px; height: 48px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; flex-shrink: 0;
+    }
+    .model-info h4 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+    .model-info p { font-size: 13px; color: var(--text-muted); }
+    .model-badge {
+      margin-left: auto; font-size: 11px; padding: 3px 10px;
+      border-radius: 100px; font-weight: 600; white-space: nowrap;
+    }
+    .badge-green { background: rgba(16,185,129,0.15); color: #34d399; }
+    .badge-blue { background: rgba(99,102,241,0.15); color: #818cf8; }
+    .badge-pink { background: rgba(236,72,153,0.15); color: #f472b6; }
+    .badge-amber { background: rgba(245,158,11,0.15); color: #fbbf24; }
+
+    /* ========== PRICING ========== */
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: start; }
+    @media (max-width: 1024px) { .pricing-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; } }
+    .pricing-card {
+      background: rgba(24,24,27,0.5); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl); padding: 40px 32px; transition: all 0.3s ease;
+      position: relative;
+    }
+    .pricing-card.featured {
+      border-color: var(--accent-1);
+      background: linear-gradient(180deg, rgba(99,102,241,0.08) 0%, rgba(24,24,27,0.5) 100%);
+      box-shadow: 0 0 60px -10px rgba(99,102,241,0.15);
+    }
+    .pricing-card.featured::before {
+      content: ''; position: absolute; inset: -1px; border-radius: var(--radius-xl);
+      background: var(--gradient-primary); z-index: -1; opacity: 0.3;
+    }
+    .pricing-popular {
+      position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+      padding: 4px 20px; border-radius: 100px; font-size: 12px; font-weight: 700;
+      background: var(--gradient-primary); color: #fff; letter-spacing: 0.05em;
+    }
+    .pricing-name { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .pricing-price { margin-bottom: 8px; }
+    .pricing-price .amount { font-size: 48px; font-weight: 800; letter-spacing: -0.03em; }
+    .pricing-price .period { font-size: 15px; color: var(--text-muted); }
+    .pricing-desc { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; line-height: 1.6; }
+    .pricing-features { list-style: none; margin-bottom: 32px; }
+    .pricing-features li {
+      padding: 8px 0; font-size: 14px; color: var(--text-secondary);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .pricing-features li::before { content: '✓'; color: var(--accent-emerald); font-weight: 700; }
+    .pricing-card .btn { width: 100%; justify-content: center; padding: 14px; font-size: 15px; }
+
+    /* ========== STATUS ========== */
+    .status-section { background: var(--bg-surface); }
+    .status-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    @media (max-width: 768px) { .status-grid { grid-template-columns: repeat(2, 1fr); } }
+    .status-card {
+      background: var(--bg-base); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md); padding: 24px; text-align: center;
+    }
+    .status-indicator { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .status-dot.online { background: var(--accent-emerald); box-shadow: 0 0 10px rgba(16,185,129,0.5); }
+    .status-label { font-size: 14px; font-weight: 600; }
+    .status-value { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+    .status-desc { font-size: 12px; color: var(--text-muted); }
+
+    /* ========== DOCS ========== */
+    .docs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    @media (max-width: 768px) { .docs-grid { grid-template-columns: 1fr; } }
+    .doc-card {
+      background: rgba(24,24,27,0.5); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg); padding: 32px; transition: all 0.2s ease;
+      display: block;
+    }
+    .doc-card:hover { border-color: var(--border-medium); transform: translateY(-2px); }
+    .doc-card .doc-icon { font-size: 28px; margin-bottom: 16px; }
+    .doc-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .doc-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+    .doc-card .doc-link { font-size: 14px; color: var(--accent-1); font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+    .doc-card .doc-link:hover { gap: 10px; }
+
+    /* ========== FOOTER ========== */
+    .footer {
+      padding: 64px 0 32px; border-top: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+    }
+    .footer-grid { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 48px; margin-bottom: 48px; }
+    @media (max-width: 768px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+    .footer-brand p { font-size: 14px; color: var(--text-muted); margin-top: 16px; line-height: 1.7; max-width: 300px; }
+    .footer-col h4 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 20px; }
+    .footer-col a { display: block; padding: 6px 0; font-size: 14px; color: var(--text-muted); transition: color 0.2s; }
+    .footer-col a:hover { color: var(--text-primary); }
+    .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 32px; border-top: 1px solid var(--border-subtle); flex-wrap: wrap; gap: 16px; }
+    .footer-bottom p { font-size: 13px; color: var(--text-muted); }
+    .footer-socials { display: flex; gap: 16px; }
+    .footer-socials a {
+      width: 36px; height: 36px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+      color: var(--text-muted); transition: all 0.2s ease;
+    }
+    .footer-socials a:hover { border-color: var(--border-medium); color: var(--text-primary); background: var(--bg-hover); }
+
+    /* ========== ANIMATIONS ========== */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-in { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .animate-in.visible { opacity: 1; transform: translateY(0); }
+
+    /* ========== UTILITIES ========== */
+    .text-gradient { background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .mt-8 { margin-top: 32px; }
+    .mb-8 { margin-bottom: 32px; }
+    .text-center { text-align: center; }
+  </style>
+</head>
+<body>
+
+<!-- Scroll Progress -->
+<div id="scroll-progress"></div>
+
+<!-- Navigation -->
+<nav class="nav" id="nav">
+  <div class="container">
+    <a href="#" class="nav-logo">
+      <div class="logo-icon">⭐</div>
+      <span>星链 API</span>
+    </a>
+    <div class="nav-links" id="navLinks">
+      <a href="#features">功能特性</a>
+      <a href="#models">支持模型</a>
+      <a href="#pricing">定价方案</a>
+      <a href="#status">运行状态</a>
+      <a href="#docs">文档</a>
+    </div>
+    <div class="nav-actions">
+      <a href="admin.html" class="btn btn-ghost btn-sm">后台管理</a>
+      <a href="#" class="btn btn-primary btn-sm">立即开始</a>
+      <button class="nav-mobile-toggle" id="mobileToggle" onclick="document.getElementById('navLinks').classList.toggle('open')">☰</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="container">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      所有节点运行正常 · 平均延迟 &lt;200ms
+    </div>
+    <h1>
+      一站式 <span class="china-text">AI 大模型</span><br>
+      <span class="gradient-text">API 中转服务</span>
+    </h1>
+    <p>
+      集成 OpenAI、Claude、Gemini、DeepSeek、GLM 等主流大模型接口，<br>
+      统一 OpenAI 格式调用，低延迟高可用，7×24 稳定直连。
+    </p>
+    <div class="hero-cta">
+      <a href="#" class="btn btn-primary" style="padding: 14px 32px; font-size: 16px;">
+        🚀 免费注册体验
+      </a>
+      <a href="#docs" class="btn btn-ghost" style="padding: 14px 32px; font-size: 16px;">
+        📖 查看文档
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="value" data-count="200">0+</div>
+        <div class="label">支持模型</div>
+      </div>
+      <div class="hero-stat">
+        <div class="value">99.9%</div>
+        <div class="label">可用性 SLA</div>
+      </div>
+      <div class="hero-stat">
+        <div class="value">&lt;200ms</div>
+        <div class="label">平均延迟</div>
+      </div>
+      <div class="hero-stat">
+        <div class="value">10亿+</div>
+        <div class="label">累计请求</div>
+      </div>
+    </div>
+
+    <!-- Code Preview -->
+    <div class="code-preview">
+      <div class="code-header">
+        <div class="code-dots"><span></span><span></span><span></span></div>
+        <span class="code-title">quickstart.py</span>
+        <button class="code-copy" onclick="copyCode()">复制</button>
+      </div>
+      <div class="code-body" id="codeBlock">
+<pre><span class="keyword">from</span> openai <span class="keyword">import</span> OpenAI
+
+client = OpenAI(
+    api_key=<span class="string">"sk-your-api-key"</span>,
+    base_url=<span class="string">"https://api.starlink.tech/v1"</span>
+)
+
+response = client.chat.completions.<span class="func">create</span>(
+    model=<span class="string">"gpt-4o"</span>,
+    messages=[
+        {<span class="string">"role"</span>: <span class="string">"user"</span>, <span class="string">"content"</span>: <span class="string">"你好，星链 API！"</span>}
+    ]
+)
+<span class="func">print</span>(response.choices[0].message.content)</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section id="features">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">核心优势</div>
+      <h2 class="section-title">为什么选择 <span class="text-gradient">星链 API</span></h2>
+      <p class="section-desc">我们致力于为开发者提供最稳定、最快速、最易用的 AI API 中转服务</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card animate-in">
+        <div class="feature-icon blue">⚡</div>
+        <h3>超低延迟</h3>
+        <p>全球多节点部署，智能路由选择最近的接入点，平均响应延迟低于 200ms，确保极致的调用体验。</p>
+      </div>
+      <div class="feature-card animate-in">
+        <div class="feature-icon purple">🛡️</div>
+        <h3>高可用保障</h3>
+        <p>多渠道自动故障转移，99.9% 可用性 SLA 保障。单节点故障自动切换，不影响业务运行。</p>
+      </div>
+      <div class="feature-card animate-in">
+        <div class="feature-icon cyan">🔗</div>
+        <h3>统一接口格式</h3>
+        <p>完全兼容 OpenAI API 格式，零成本迁移。支持流式输出、函数调用、图片生成等全部功能。</p>
+      </div>
+      <div class="feature-card animate-in">
+        <div class="feature-icon pink">💎</div>
+        <h3>模型丰富</h3>
+        <p>集成 200+ 主流 AI 模型，覆盖 OpenAI、Anthropic、Google、Meta、智谱等全球顶尖 AI 厂商。</p>
+      </div>
+      <div class="feature-card animate-in">
+        <div class="feature-icon emerald">💰</div>
+        <h3>价格透明</h3>
+        <p>按量计费，价格公开透明，相比官方接口最高可节省 70% 成本。注册即送免费额度体验。</p>
+      </div>
+      <div class="feature-card animate-in">
+        <div class="feature-icon amber">📊</div>
+        <h3>实时监控</h3>
+        <p>完善的后台管理系统，实时查看用量统计、调用日志、费用明细，数据一目了然。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Models Section -->
+<section id="models" class="models-section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">模型生态</div>
+      <h2 class="section-title">支持 <span class="text-gradient">200+</span> 主流 AI 模型</h2>
+      <p class="section-desc">覆盖文本对话、代码生成、图像创作、语音识别等全场景 AI 能力</p>
+    </div>
+    <div class="models-grid">
+      <div class="model-card animate-in">
+        <div class="model-logo" style="background:rgba(16,185,129,0.12)">🟢</div>
+        <div class="model-info">
+          <h4>OpenAI GPT-4o</h4>
+          <p>最新旗舰多模态模型</p>
+        </div>
+        <span class="model-badge badge-green">热门</span>
+      </div>
+      <div class="model-card animate-in">
+        <div class="model-logo" style="background:rgba(236,72,153,0.12)">🩷</div>
+        <div class="model-info">
+          <h4>Claude 4 Sonnet</h4>
+          <p>Anthropic 深度推理模型</p>
+        </div>
+        <span class="model-badge badge-pink">新品</span>
+      </div>
+      <div class="model-card animate-in">
+        <div class="model-logo" style="background:rgba(99,102,241,0.12)">🔵</div>
+        <div class="model-info">
+          <h4>Gemini 2.5 Pro</h4>
+          <p>Google 最新多模态模型</p>
+        </div>
+        <span class="model-badge badge-blue">推荐</span>
+      </div>
+      <div class="model-card animate-in">
+        <div class="model-logo" style="background:rgba(6,182,212,0.12)">🩵</div>
+        <div class="model-info">
+          <h4>DeepSeek V3/R1</h4>
+          <p>深度求索推理与对话模型</p>
+        </div>
+        <span class="model-badge badge-green">热门</span>
+      </div>
+      <div class="model-card animate-in">
+        <div class="model-logo" style="background:rgba(139,92,246,0.12)">🟣</div>
+        <div class="model-info">
+          <h4>GLM-4 / GLM-Z1</h4>
+          <p>智谱 AI 旗舰系列模型</p>
+        </div>
+        <span class="model-badge badge-blue">推荐</span>
+      </div>
+      <div class="model-card animate-in">
+        <div class="model-logo" style="background:rgba(245,158,11,0.12)">🟡</div>
+        <div class="model-info">
+          <h4>Llama 4 Maverick</h4>
+          <p>Meta 最新开源模型</p>
+        </div>
+        <span class="model-badge badge-amber">开源</span>
+      </div>
+      <div class="model-card animate-in">
+        <div class="model-logo" style="background:rgba(16,185,129,0.12)">🎨</div>
+        <div class="model-info">
+          <h4>DALL·E 3</h4>
+          <p>OpenAI 图像生成模型</p>
+        </div>
+        <span class="model-badge badge-pink">图像</span>
+      </div>
+      <div class="model-card animate-in">
+        <div class="model-logo" style="background:rgba(99,102,241,0.12)">🎤</div>
+        <div class="model-info">
+          <h4>Whisper / TTS</h4>
+          <p>语音识别与合成</p>
+        </div>
+        <span class="model-badge badge-amber">语音</span>
+      </div>
+    </div>
+    <div class="text-center mt-8">
+      <a href="#" class="btn btn-ghost">查看全部 200+ 模型 →</a>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing Section -->
+<section id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">定价方案</div>
+      <h2 class="section-title">简单透明，<span class="text-gradient">按量付费</span></h2>
+      <p class="section-desc">无月费无套路，用多少算多少。新用户注册即赠免费体验额度。</p>
+    </div>
+    <div class="pricing-grid">
+      <!-- Free -->
+      <div class="pricing-card">
+        <div class="pricing-name">体验版</div>
+        <div class="pricing-price">
+          <span class="amount">免费</span>
+        </div>
+        <div class="pricing-desc">适合个人开发者和体验用户，注册即送体验额度</div>
+        <ul class="pricing-features">
+          <li>赠送 ¥10 体验额度</li>
+          <li>支持全部模型调用</li>
+          <li>基础用量统计</li>
+          <li>社区技术支持</li>
+          <li>5 次/分钟 频率限制</li>
+        </ul>
+        <a href="#" class="btn btn-ghost">免费注册</a>
+      </div>
+      <!-- Pro -->
+      <div class="pricing-card featured">
+        <div class="pricing-popular">🔥 最受欢迎</div>
+        <div class="pricing-name">专业版</div>
+        <div class="pricing-price">
+          <span class="amount">¥0.01</span>
+          <span class="period">/ 1K Tokens 起步</span>
+        </div>
+        <div class="pricing-desc">适合中小团队和项目，享受高优先级通道和更多配额</div>
+        <ul class="pricing-features">
+          <li>充值享 9 折优惠</li>
+          <li>50 次/分钟 频率限制</li>
+          <li>高级用量统计面板</li>
+          <li>优先故障转移通道</li>
+          <li>邮件技术支持</li>
+          <li>API 密钥管理</li>
+        </ul>
+        <a href="#" class="btn btn-primary">立即开通</a>
+      </div>
+      <!-- Enterprise -->
+      <div class="pricing-card">
+        <div class="pricing-name">企业版</div>
+        <div class="pricing-price">
+          <span class="amount">定制</span>
+        </div>
+        <div class="pricing-desc">适合大型企业和高用量场景，专属服务与定制方案</div>
+        <ul class="pricing-features">
+          <li>按需定制价格方案</li>
+          <li>无频率限制</li>
+          <li>专属高速通道</li>
+          <li>7×24 专属技术支持</li>
+          <li>SLA 99.99% 保障</li>
+          <li>私有化部署可选</li>
+        </ul>
+        <a href="mailto:rao5201@126.com" class="btn btn-ghost">联系我们</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Status Section -->
+<section id="status" class="status-section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">实时状态</div>
+      <h2 class="section-title">系统运行<span class="text-gradient"> 状态监控</span></h2>
+      <p class="section-desc">所有服务节点实时监控，保障您的 API 调用稳定可靠</p>
+    </div>
+    <div class="status-grid">
+      <div class="status-card">
+        <div class="status-indicator">
+          <span class="status-dot online"></span>
+          <span class="status-label">OpenAI 渠道</span>
+        </div>
+        <div class="status-value text-gradient">99.97%</div>
+        <div class="status-desc">过去 30 天可用率 · 延迟 156ms</div>
+      </div>
+      <div class="status-card">
+        <div class="status-indicator">
+          <span class="status-dot online"></span>
+          <span class="status-label">Anthropic 渠道</span>
+        </div>
+        <div class="status-value text-gradient">99.95%</div>
+        <div class="status-desc">过去 30 天可用率 · 延迟 189ms</div>
+      </div>
+      <div class="status-card">
+        <div class="status-indicator">
+          <span class="status-dot online"></span>
+          <span class="status-label">Google 渠道</span>
+        </div>
+        <div class="status-value text-gradient">99.98%</div>
+        <div class="status-desc">过去 30 天可用率 · 延迟 132ms</div>
+      </div>
+      <div class="status-card">
+        <div class="status-indicator">
+          <span class="status-dot online"></span>
+          <span class="status-label">国内模型渠道</span>
+        </div>
+        <div class="status-value text-gradient">99.99%</div>
+        <div class="status-desc">过去 30 天可用率 · 延迟 89ms</div>
+      </div>
+    </div>
+    <div class="text-center mt-8">
+      <a href="#" class="btn btn-ghost">查看详细状态页 →</a>
+    </div>
+  </div>
+</section>
+
+<!-- Docs Section -->
+<section id="docs">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">开发文档</div>
+      <h2 class="section-title">快速集成，<span class="text-gradient">几分钟上手</span></h2>
+      <p class="section-desc">完全兼容 OpenAI SDK，零成本迁移。提供详细的文档和示例代码。</p>
+    </div>
+    <div class="docs-grid">
+      <a href="#" class="doc-card animate-in">
+        <div class="doc-icon">📘</div>
+        <h3>快速入门指南</h3>
+        <p>从注册到完成第一次 API 调用，只需 5 分钟。支持 Python、Node.js、Go 等主流语言。</p>
+        <span class="doc-link">开始使用 →</span>
+      </a>
+      <a href="#" class="doc-card animate-in">
+        <div class="doc-icon">🔧</div>
+        <h3>API 参考文档</h3>
+        <p>完整的 API 接口文档，包括所有参数说明、错误码定义、最佳实践等详细信息。</p>
+        <span class="doc-link">查看文档 →</span>
+      </a>
+      <a href="#" class="doc-card animate-in">
+        <div class="doc-icon">💡</div>
+        <h3>常见问题 FAQ</h3>
+        <p>汇总用户最常见的问题和解答，涵盖计费、模型选择、错误排查等方面。</p>
+        <span class="doc-link">查看 FAQ →</span>
+      </a>
+      <a href="#" class="doc-card animate-in">
+        <div class="doc-icon">🔄</div>
+        <h3>更新日志</h3>
+        <p>查看最新的功能更新、模型新增、渠道变更等动态，保持与平台同步。</p>
+        <span class="doc-link">查看更新 →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section style="padding: 80px 0;">
+  <div class="container">
+    <div style="background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08), rgba(6,182,212,0.06)); border: 1px solid rgba(99,102,241,0.15); border-radius: var(--radius-xl); padding: 80px 40px; text-align: center; position: relative; overflow: hidden;">
+      <div style="position: absolute; top: -100px; right: -100px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(99,102,241,0.15), transparent 70%);"></div>
+      <h2 style="font-size: clamp(28px, 4vw, 40px); font-weight: 700; margin-bottom: 16px;">准备好开始了吗？</h2>
+      <p style="font-size: 17px; color: var(--text-secondary); margin-bottom: 36px; max-width: 500px; margin-left: auto; margin-right: auto;">注册即送免费体验额度，无需绑定支付方式，立即体验 200+ AI 模型的强大能力</p>
+      <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+        <a href="#" class="btn btn-primary" style="padding: 14px 36px; font-size: 16px;">🚀 免费注册</a>
+        <a href="mailto:rao5201@126.com" class="btn btn-ghost" style="padding: 14px 36px; font-size: 16px;">📧 联系我们</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="nav-logo">
+          <div class="logo-icon">⭐</div>
+          <span>星链 API</span>
+        </div>
+        <p>一站式 AI 大模型 API 中转服务平台，致力于为开发者提供稳定、快速、易用的 API 接入体验。</p>
+      </div>
+      <div class="footer-col">
+        <h4>产品</h4>
+        <a href="#">API 服务</a>
+        <a href="#">定价方案</a>
+        <a href="#">模型列表</a>
+        <a href="#">状态监控</a>
+      </div>
+      <div class="footer-col">
+        <h4>开发者</h4>
+        <a href="#">快速入门</a>
+        <a href="#">API 文档</a>
+        <a href="#">SDK 下载</a>
+        <a href="#">更新日志</a>
+      </div>
+      <div class="footer-col">
+        <h4>支持</h4>
+        <a href="mailto:rao5201@126.com">联系邮箱</a>
+        <a href="#">常见问题</a>
+        <a href="#">服务条款</a>
+        <a href="#">隐私政策</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 星链 API. All rights reserved.</p>
+      <div class="footer-socials">
+        <a href="#" title="GitHub">💻</a>
+        <a href="#" title="邮箱">📧</a>
+        <a href="#" title="微信">💬</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Scroll progress bar
+  window.addEventListener('scroll', () => {
+    const scrollTop = document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const progress = (scrollTop / scrollHeight) * 100;
+    document.getElementById('scroll-progress').style.width = progress + '%';
+
+    // Nav background on scroll
+    document.getElementById('nav').classList.toggle('scrolled', scrollTop > 50);
+  });
+
+  // Scroll animation observer
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+  document.querySelectorAll('.animate-in').forEach(el => observer.observe(el));
+
+  // Copy code
+  function copyCode() {
+    const code = `from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.starlink.tech/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "你好，星链 API！"}
+    ]
+)
+print(response.choices[0].message.content)`;
+    navigator.clipboard.writeText(code).then(() => {
+      const btn = document.querySelector('.code-copy');
+      btn.textContent = '已复制 ✓';
+      setTimeout(() => btn.textContent = '复制', 2000);
+    });
+  }
+</script>
+
+</body>
+</html>
